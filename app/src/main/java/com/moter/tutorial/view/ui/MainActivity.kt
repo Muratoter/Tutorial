@@ -6,12 +6,16 @@ import android.util.Log
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.moter.tutorial.R
 import com.moter.tutorial.network.NewsService
 import com.moter.tutorial.view.adapter.NewsAdapter
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var mainViewModel: MainViewModel
@@ -27,18 +31,19 @@ class MainActivity : AppCompatActivity() {
 
         viewManager = LinearLayoutManager(this)
 
+        newsAdapter= NewsAdapter()
         rvNewsList.apply {
             setHasFixedSize(true)
             layoutManager = viewManager
+            adapter=newsAdapter
         }
-        mainViewModel.newsResponse.observe(this, Observer {
-            Log.d("MainActivity", "response ${it.toString()}")
-            newsAdapter = NewsAdapter()
-//            newsAdapter.submitData(it.articles)
-            rvNewsList.apply {
-                adapter = newsAdapter
-            }
-        })
+
+        lifecycleScope.launch {
+           mainViewModel.listData.collect {
+               newsAdapter.submitData(it)
+           }
+        }
+
 
         rvNewsList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             val layoutManager = rvNewsList.layoutManager as LinearLayoutManager
